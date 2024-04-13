@@ -1,0 +1,17 @@
+---
+gcp_compute_name: undefined
+gcp_compute_group: undefined
+
+gcp_compute_fw_ports: []
+gcp_compute_fw_source_ranges: []
+
+gcp_compute_auth_kind: serviceaccount
+gcp_compute_svc_file_enc: ../files/gcp_ansible_svc.json
+gcp_compute_svc_file_content: "{{ lookup('ansible.builtin.file', '{{ gcp_compute_svc_file_enc }}') | from_json | to_json }}"
+
+gcp_compute_count: 1
+gcp_compute_project: trusty-art-420210
+gcp_compute_region: us-central1
+gcp_compute_zone: us-central1-a
+gcp_compute_source_image: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+gcp_compute_machine_type: e2-micro

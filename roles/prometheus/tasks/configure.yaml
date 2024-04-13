@@ -1,0 +1,54 @@
+---
+- name: configure | Create base directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+  loop: "{{ prometheus_base_directories }}"
+  tags: prometheus
+
+- name: configure | Generate prometheus.yml
+  ansible.builtin.template:
+    dest: /etc/prometheus/prometheus.yml
+    force: true
+    src: prometheus.yml.j2
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0644
+  notify: restart prometheus
+  tags: prometheus
+
+- name: configure | Generate default alert rules
+  ansible.builtin.template:
+    dest: /etc/prometheus/rules/default.rules.yml
+    force: true
+    src: default.rules.yml.j2
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0644
+  notify: restart prometheus
+  tags: prometheus
+
+- name: configure | Generate custom alert rules
+  ansible.builtin.template:
+    dest: /etc/prometheus/rules/custom.rules.yml
+    force: true
+    src: custom.rules.j2
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0644
+  notify: restart prometheus
+  tags: prometheus
+
+- name: configure | Generate custom target rules
+  ansible.builtin.template:
+    dest: /etc/prometheus/targets/custom.targets.yml
+    force: true
+    src: custom.targets.j2
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0644
+  notify: restart prometheus
+  tags: prometheus

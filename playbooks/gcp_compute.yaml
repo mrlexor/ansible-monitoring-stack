@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  gather_facts: false
+  become: false
+  strategy: linear
+  roles:
+    - role: "common/gcp_compute"

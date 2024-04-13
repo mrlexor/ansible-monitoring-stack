@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+# See https://awesome-prometheus-alerts.grep.to/rules
+# for useful rules but note the labels may be different
+{{ prometheus_custom_targets | to_nice_yaml(sort_keys=False,indent=2) }}

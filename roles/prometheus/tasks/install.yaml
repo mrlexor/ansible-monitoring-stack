@@ -1,0 +1,23 @@
+---
+- name: install | Run prometheus as a docker container
+  community.docker.docker_container:
+    command: |
+      --config.file=/etc/prometheus/prometheus.yml
+      --storage.tsdb.path=/prometheus
+      --web.console.libraries=/usr/share/prometheus/console_libraries
+      --web.console.templates=/usr/share/prometheus/consoles
+      {{ prometheus_additional_command_args }}
+    image: prom/prometheus:{{ prometheus_version }}
+    name: prometheus
+    published_ports:
+      - 9090:9090
+    recreate: false
+    restart_policy: always
+    user: root
+    volumes:
+      - /etc/prometheus/rules/:/etc/prometheus/rules/:ro
+      - /etc/prometheus/targets/:/etc/prometheus/targets/:ro
+      - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+  become_user: "{{ prometheus_user }}"
+  tags: prometheus

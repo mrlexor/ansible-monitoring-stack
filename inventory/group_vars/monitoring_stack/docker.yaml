@@ -1,0 +1,8 @@
+---
+docker_users:
+  - prometheus
+  - grafana
+  - alertmanager
+  - loki
+  - node_exporter
+  - cadvisor

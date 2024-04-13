@@ -1,0 +1,6 @@
+---
+- include_tasks: "{{ item }}"
+  loop:
+    - prepare.yaml
+    - install.yaml
+  tags: docker, docker-compose, docker-users
