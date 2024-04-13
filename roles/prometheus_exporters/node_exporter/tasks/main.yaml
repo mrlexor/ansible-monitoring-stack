@@ -1,0 +1,16 @@
+---
+- name: Run node_exporter as a docker container
+  community.docker.docker_container:
+    name: node_exporter
+    image: "{{ node_exporter_docker_image }}"
+    pid_mode: host
+    recreate: false
+    restart_policy: always
+    volumes:
+      - /:/host:ro
+    command:
+      - "--path.rootfs=/host"
+    labels:
+      prometheus_scrape: "true"
+  become_user: "{{ node_exporter_user }}"
+  tags: node_exporter

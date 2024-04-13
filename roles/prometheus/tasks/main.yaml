@@ -1,0 +1,8 @@
+---
+- name: Import tasks configure.yaml
+  ansible.builtin.import_tasks: configure.yaml
+  tags: prometheus
+
+- name: Import tasks install.yaml
+  ansible.builtin.import_tasks: install.yaml
+  tags: prometheus

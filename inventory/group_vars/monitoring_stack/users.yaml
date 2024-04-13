@@ -1,0 +1,34 @@
+---
+users_groups:
+  - prometheus
+  - grafana
+  - alertmanager
+  - loki
+  - node_exporter
+  - cadvisor
+
+users:
+  - name: prometheus
+    comment: Prometheus
+    groups:
+      - prometheus
+  - name: grafana
+    comment: Grafana
+    groups:
+      - grafana
+  - name: alertmanager
+    comment: Alertmanager
+    groups:
+      - alertmanager
+  - name: loki
+    comment: Loki
+    groups:
+      - loki
+  - name: node_exporter
+    comment: Node exporter
+    groups:
+      - node_exporter
+  - name: cadvisor
+    comment: cAdvisor
+    groups:
+      - cadvisor

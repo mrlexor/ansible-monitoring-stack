@@ -1,0 +1,28 @@
+---
+- name: Create groups
+  ansible.builtin.group:
+    name: "{{ item }}"
+  loop: "{{ users_groups }}"
+  tags: users
+
+- name: Set up user accounts
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | default(omit) }}"
+    groups: "{{ item.groups | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+    shell: "{{ item.shell | default(omit) }}"
+    append: true
+  loop: "{{ users }}"
+  tags: users
+
+- name:  Populate SSH keys
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.authorized_keys }}"
+    exclusive: "{{ item.restrict_authorized_keys | default('yes') }}"
+  when:
+    - item.authorized_keys is defined
+    - not ansible_check_mode
+  loop: "{{ users }}"
+  tags: users

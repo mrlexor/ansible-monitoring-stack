@@ -1,0 +1,23 @@
+---
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: "{{ packages_cache_valid_time }}"
+  tags: packages
+
+- name: Install predefined packages
+  ansible.builtin.apt:
+    install_recommends: "{{ packages_install_recommends }}"
+    name: "{{ packages_predefined_packages[item] | unique | sort }}"
+    state: present
+  loop: "{{ packages_predefined_package_groups }}"
+  tags: packages
+
+- name: Install extra packages
+  ansible.builtin.apt:
+    install_recommends: "{{ packages_install_recommends }}"
+    name: "{{ item.value | unique | sort }}"
+    state: present
+  when: item.value
+  loop: "{{ packages_install_extra_packages | dict2items }}"
+  tags: packages

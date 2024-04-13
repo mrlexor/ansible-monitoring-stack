@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+# Prometheus Alert rules
+# https://thenewstack.io/contributing-prometheus-history-alertmanager/
+# https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+
+groups:
+
+  - name: default instance down rules
+    rules:
+{% raw %}
+      - alert: instance_down
+        expr: up == 0
+        for: 5s
+        labels:
+          severity: error
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5s."
+{% endraw %}

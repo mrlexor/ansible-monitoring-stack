@@ -1,0 +1,64 @@
+---
+packages_cache_valid_time: 3600
+packages_install_recommends: false
+packages_install_extra_packages: {}
+
+packages_predefined_package_groups:
+  - basic
+  - network
+  - debug
+  - build
+
+packages_predefined_packages:
+  basic:
+    - apt-transport-https
+    - apt-utils
+    - at
+    - bc
+    - curl
+    - gnupg
+    - htop
+    - jq
+    - less
+    - libsasl2-modules
+    - locales
+    - lsof
+    - moreutils
+    - pigz
+    - screen
+    - software-properties-common
+    - tmux
+    - tzdata
+    - vim
+    - wget
+    - cron
+
+  network:
+    - bridge-utils
+    - conntrack
+    - dnsutils
+    - ebtables
+    - ethtool
+    - ifenslave
+    - iproute2
+    - ipset
+    - ipvsadm
+    - iptables
+    - iputils-ping
+    - netcat-openbsd
+    - net-tools
+    - socat
+    - tcpdump
+    - tcptraceroute
+    - telnet
+    - traceroute
+    - vlan
+
+  debug:
+    - atop
+    - iotop
+    - ltrace
+    - strace
+    - sysstat
+
+  build: []

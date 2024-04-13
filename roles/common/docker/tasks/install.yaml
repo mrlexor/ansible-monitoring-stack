@@ -1,0 +1,85 @@
+---
+- name: install | Install Docker packages.
+  ansible.builtin.package:
+    name: "{{ docker_packages }}"
+    state: "{{ docker_packages_state }}"
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags: docker
+
+- name: install | Install additional packages.
+  ansible.builtin.package:
+    name: "{{ docker_additional_packages }}"
+    state: present
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags: docker
+
+- name: install | Install Docker SDK for Python
+  ansible.builtin.pip:
+    name: docker
+  tags: docker
+
+- name: install | Install docker-compose plugin.
+  ansible.builtin.package:
+    name: "{{ docker_compose_package }}"
+    state: "{{ docker_compose_package_state }}"
+  notify: restart docker
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "docker_install_compose_plugin | bool == true"
+  tags: docker
+
+- name: install | Ensure /etc/docker/ directory exists.
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: 0755
+  when: docker_daemon_options.keys() | length > 0
+  tags: docker
+
+- name: install | Configure Docker daemon options.
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: 0644
+  when: docker_daemon_options.keys() | length > 0
+  notify: restart docker
+  tags: docker
+
+- name: install | Ensure Docker is started and enabled at boot.
+  ansible.builtin.service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: "{{ docker_service_enabled }}"
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: docker_service_manage | bool
+  tags: docker
+
+- name: install | Ensure handlers are notified now to avoid firewall conflicts.
+  ansible.builtin.meta: flush_handlers
+  tags: docker
+
+- include_tasks: docker-compose.yaml
+  when: docker_install_compose | bool
+  tags: docker
+
+- name: install | Get docker group info using getent.
+  ansible.builtin.getent:
+    database: group
+    key: docker
+    split: ':'
+  when: docker_users | length > 0 and not ansible_check_mode
+  tags: docker
+
+- name: install | Check if there are any users to add to the docker group.
+  ansible.builtin.set_fact:
+    at_least_one_user_to_modify: true
+  when:
+    - not ansible_check_mode
+    - docker_users | length > 0
+    - item not in ansible_facts.getent_group["docker"][2]
+  with_items: "{{ docker_users }}"
+  tags: docker
+
+- include_tasks: docker-users.yaml
+  when: at_least_one_user_to_modify is defined
+  tags: docker

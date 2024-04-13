@@ -1,0 +1,86 @@
+---
+- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-disk
+  google.cloud.gcp_compute_disk:
+    name: "{{ gcp_compute_name }}-{{ item }}-vm-disk"
+    size_gb: 50
+    source_image: "{{ gcp_compute_source_image }}"
+    zone: "{{ gcp_compute_zone }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    scopes:
+      - https://www.googleapis.com/auth/compute
+    state: present
+  register: _gcp_compute_disk
+  check_mode: false
+  tags: gcp_compute
+
+- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-address
+  google.cloud.gcp_compute_address:
+    name: "{{ gcp_compute_name }}-{{ item }}-vm-address"
+    region: "{{ gcp_compute_region }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    scopes:
+      - https://www.googleapis.com/auth/compute
+    state: present
+  register: _gcp_compute_address
+  check_mode: false
+  tags: gcp_compute
+
+- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm
+  google.cloud.gcp_compute_instance:
+    state: present
+    name: "{{ gcp_compute_name }}-{{ item }}-vm"
+    machine_type: "{{ gcp_compute_machine_type }}"
+    disks:
+      - auto_delete: true
+        boot: true
+        source:
+          selfLink: https://www.console.cloud.google.com/compute/v1/projects/{{ gcp_compute_project }}/zones/{{ gcp_compute_zone }}/disks/{{ gcp_compute_name }}-{{ item }}-vm-disk
+    network_interfaces:
+      - network: null
+        access_configs:
+          - name: "External NAT"
+            nat_ip: "{{ _gcp_compute_address }}"
+            type: "ONE_TO_ONE_NAT"
+    zone: "{{ gcp_compute_zone }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    scopes:
+      - https://www.googleapis.com/auth/compute
+  register: _gcp_compute_instance
+  check_mode: false
+  tags: gcp_compute
+
+- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-fw
+  google.cloud.gcp_compute_firewall:
+    name: "{{ gcp_compute_name }}-{{ item }}-vm-fw"
+    allowed:
+      - ip_protocol: tcp
+        ports: "{{ gcp_compute_fw_ports }}"
+    source_ranges: "{{ gcp_compute_fw_source_ranges }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    state: present
+  check_mode: false
+  tags: gcp_compute
+
+- name: create_instance | Wait for SSH to come up on {{ gcp_compute_name }}-{{ item }}-vm
+  ansible.builtin.wait_for:
+    host: "{{ _gcp_compute_address.address }}"
+    port: 22
+    delay: 10
+    timeout: 60
+  check_mode: false
+  tags: gcp_compute
+
+- name: create_instance | Add {{ gcp_compute_name }}-{{ item }}-vm to {{ gcp_compute_group }}
+  ansible.builtin.add_host:
+    hostname: "{{ _gcp_compute_address.address }}"
+    groupname: "{{ gcp_compute_group }}"
+  check_mode: false
+  tags: gcp_compute

@@ -1,0 +1,15 @@
+---
+prometheus_version: v2.51.2
+
+prometheus_user: prometheus
+prometheus_group: prometheus
+prometheus_base_directories:
+  - /etc/prometheus
+  - /etc/prometheus/rules
+  - /etc/prometheus/targets
+
+prometheus_additional_command_args: |
+  --web.enable-lifecycle
+
+prometheus_custom_targets: []
+prometheus_custom_rules: {}
