@@ -1,0 +1,23 @@
+---
+- name: Run cAdvisor as a docker container
+  community.docker.docker_container:
+    name: cadvisor
+    image: "{{ cadvisor_docker_image }}"
+    user: root
+    recreate: false
+    restart_policy: always
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    labels:
+      prometheus_cadvisor: "true"
+    networks:
+      - name: "{{ cadvisor_network_name }}"
+  become_user: "{{ cadvisor_user }}"
+  tags: cadvisor

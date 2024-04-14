@@ -1,0 +1,13 @@
+---
+dependencies:
+  - role: common/users
+    vars:
+      users_groups:
+        - name: "{{ alertmanager_group }}"
+          gid: "{{ alertmanager_gid }}"
+      users:
+        - name: "{{ alertmanager_user }}"
+          uid: "{{ alertmanager_uid }}"
+          groups:
+            - "{{ alertmanager_group }}"
+            - docker

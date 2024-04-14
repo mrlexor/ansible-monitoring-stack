@@ -3,6 +3,7 @@
   community.docker.docker_container:
     name: node_exporter
     image: "{{ node_exporter_docker_image }}"
+    user: "{{ node_exporter_uid }}:{{ node_exporter_gid }}"
     pid_mode: host
     recreate: false
     restart_policy: always
@@ -11,6 +12,8 @@
     command:
       - "--path.rootfs=/host"
     labels:
-      prometheus_scrape: "true"
+      prometheus_node_exporter: "true"
+    networks:
+      - name: "{{ node_exporter_network_name }}"
   become_user: "{{ node_exporter_user }}"
   tags: node_exporter

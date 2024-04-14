@@ -1,0 +1,13 @@
+---
+dependencies:
+  - role: common/users
+    vars:
+      users_groups:
+        - name: "{{ cadvisor_group }}"
+          gid: "{{ cadvisor_gid }}"
+      users:
+        - name: "{{ cadvisor_user }}"
+          uid: "{{ cadvisor_uid }}"
+          groups:
+            - "{{ cadvisor_group }}"
+            - docker

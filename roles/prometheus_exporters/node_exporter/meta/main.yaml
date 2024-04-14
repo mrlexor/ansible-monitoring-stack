@@ -1,0 +1,13 @@
+---
+dependencies:
+  - role: common/users
+    vars:
+      users_groups:
+        - name: "{{ node_exporter_group }}"
+          gid: "{{ node_exporter_gid }}"
+      users:
+        - name: "{{ node_exporter_user }}"
+          uid: "{{ node_exporter_uid }}"
+          groups:
+            - "{{ node_exporter_group }}"
+            - docker

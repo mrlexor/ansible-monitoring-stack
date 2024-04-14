@@ -1,8 +1,7 @@
 ---
-docker_users:
-  - prometheus
-  - grafana
-  - alertmanager
-  - loki
-  - node_exporter
-  - cadvisor
+docker_plugins:
+  - name: grafana/loki-docker-driver:2.9.2
+    state: enable
+    alias: loki
+
+docker_network_name: monitoring

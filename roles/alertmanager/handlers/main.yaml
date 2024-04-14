@@ -1,0 +1,6 @@
+---
+- name: restart alertmanager
+  community.docker.docker_container:
+    name: alertmanager
+    restart: true
+  when: not ansible_check_mode

@@ -1,0 +1,8 @@
+---
+- name: plugins | Enabled docker plugins
+  community.docker.docker_plugin:
+    plugin_name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    alias: "{{ item.alias | default(omit) }}"
+  loop: "{{ docker_plugins }}"
+  tags: docker, docker_plugins

@@ -1,0 +1,13 @@
+---
+dependencies:
+  - role: common/users
+    vars:
+      users_groups:
+        - name: "{{ grafana_group }}"
+          gid: "{{ grafana_gid }}"
+      users:
+        - name: "{{ grafana_user }}"
+          uid: "{{ grafana_uid }}"
+          groups:
+            - "{{ grafana_group }}"
+            - docker

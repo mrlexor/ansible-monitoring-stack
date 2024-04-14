@@ -1,0 +1,8 @@
+---
+cadvisor_docker_image: gcr.io/cadvisor/cadvisor:latest
+cadvisor_network_name: monitoring
+
+cadvisor_user: cadvisor
+cadvisor_group: cadvisor
+cadvisor_uid: 905
+cadvisor_gid: 905

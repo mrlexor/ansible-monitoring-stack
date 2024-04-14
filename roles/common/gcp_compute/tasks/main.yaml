@@ -1,5 +1,5 @@
 ---
-- name: Include tasks create_instance.yaml
-  ansible.builtin.include_tasks: create_instance.yaml
+- name: Include tasks get_instance.yaml
+  ansible.builtin.include_tasks: get_instance.yaml
   with_sequence: start=1 end={{ gcp_compute_count }} format=%03x
   tags: gcp_compute

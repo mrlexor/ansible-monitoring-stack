@@ -1,0 +1,57 @@
+---
+grafana_image: grafana/grafana
+grafana_version: 10.4.2
+grafana_network_name: monitoring
+
+grafana_user: grafana
+grafana_group: grafana
+grafana_uid: 901
+grafana_gid: 901
+grafana_config_dir: /etc/grafana
+grafana_data_dir: /var/lib/grafana
+grafana_base_directories:
+  - "{{ grafana_config_dir }}"
+  - "{{ grafana_config_dir }}/provisioning"
+  - "{{ grafana_config_dir }}/provisioning/dashboards"
+  - "{{ grafana_config_dir }}/provisioning/datasources"
+  - "{{ grafana_data_dir }}"
+
+grafana_docker_provision_datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      prometheusType: Prometheus
+      prometheusVersion: 2.51.2
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      timeout: 60
+      maxLines: 10000
+  - name: Alertmanager
+    type: alertmanager
+    uid: alertmanager
+    url: http://alertmanager:8880
+    access: proxy
+    jsonData:
+      # Valid options for implementation include mimir, cortex and prometheus
+      implementation: prometheus
+      # Whether or not Grafana should send alert instances to this Alertmanager
+      handleGrafanaManagedAlerts: false
+
+# Creates the provison config.
+# You can put any dashboards json files into the provision folder outsie the container
+# and grafnaa will automatically deploy it
+grafana_docker_provision_dashboards:
+  - name: dashboards
+    type: file
+    updateIntervalSeconds: 30
+    options:
+      path: "{{ grafana_config_dir }}/provisioning/dashboards"
+      foldersFromFilesStructure: true

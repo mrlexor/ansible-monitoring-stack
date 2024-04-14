@@ -1,0 +1,23 @@
+---
+- name: install | Create alertmanager as a docker container
+  community.docker.docker_container:
+    state: started
+    image: "{{ alertmanager_image }}:{{ alertmanager_version }}"
+    name: alertmanager
+    published_ports:
+      - 9093:9093
+    recreate: false
+    restart_policy: always
+    user: "{{ alertmanager_uid }}:{{ alertmanager_gid }}"
+    volumes:
+      - /etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - /var/lib/alertmanager:/alertmanager
+    log_driver: loki
+    log_options:
+      loki-url: "http://{{ hostvars[ansible_host].ansible_default_ipv4.address }}:3100/loki/api/v1/push"
+      loki-retries: "5"
+      loki-batch-size: "400"
+    networks:
+      - name: "{{ alertnamager_network_name }}"
+  become_user: "{{ alertmanager_user }}"
+  tags: alertmanager
