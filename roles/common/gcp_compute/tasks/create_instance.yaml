@@ -27,6 +27,7 @@
     state: present
   register: _gcp_compute_address
   check_mode: false
+  when: gcp_compute_reserved_address_name == ""
   tags: gcp_compute
 
 - name: create_instance | Create {{ gcp_compute_name }}-{{ item }}-vm
@@ -43,7 +44,7 @@
       - network: null
         access_configs:
           - name: "External NAT"
-            nat_ip: "{{ _gcp_compute_address }}"
+            nat_ip: "{{ _gcp_compute_get_reserved_address.resources[0] | default(_gcp_compute_address) }}"
             type: "ONE_TO_ONE_NAT"
     zone: "{{ gcp_compute_zone }}"
     project: "{{ gcp_compute_project }}"
@@ -71,7 +72,7 @@
 
 - name: create_instance | Wait for SSH to come up on {{ gcp_compute_name }}-{{ item }}-vm
   ansible.builtin.wait_for:
-    host: "{{ _gcp_compute_address.address }}"
+    host: "{{ _gcp_compute_get_reserved_address.resources[0].address | default(_gcp_compute_address.address) }}"
     port: 22
     delay: 10
     timeout: 60
@@ -83,4 +84,5 @@
     hostname: "{{ _gcp_compute_address.address }}"
     groupname: "{{ gcp_compute_group }}"
   check_mode: false
+  when: gcp_compute_reserved_address_name == ""
   tags: gcp_compute

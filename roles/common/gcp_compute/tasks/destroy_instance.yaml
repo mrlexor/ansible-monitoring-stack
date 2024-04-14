@@ -1,0 +1,34 @@
+---
+- name: destroy_instance | Remove {{ gcp_compute_name }}-{{ item }}-vm-fw
+  google.cloud.gcp_compute_firewall:
+    state: absent
+    name: "{{ gcp_compute_name }}-{{ item }}-vm-fw"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+  check_mode: false
+
+- name: destroy_instance | Remove {{ gcp_compute_name }}-{{ item }}-vm
+  google.cloud.gcp_compute_instance:
+    state: absent
+    name: "{{ gcp_compute_name }}-{{ item }}-vm"
+    zone: "{{ gcp_compute_zone }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    scopes:
+      - https://www.googleapis.com/auth/compute
+  check_mode: false
+
+- name: destroy_instance | Remove {{ gcp_compute_name }}-{{ item }}-vm-address
+  google.cloud.gcp_compute_address:
+    state: absent
+    name: "{{ gcp_compute_name }}-{{ item }}-vm-address"
+    region: "{{ gcp_compute_region }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+    scopes:
+      - https://www.googleapis.com/auth/compute
+  when: gcp_compute_reserved_address_name == ""
+  check_mode: false

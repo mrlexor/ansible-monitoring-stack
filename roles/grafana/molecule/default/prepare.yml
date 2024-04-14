@@ -1,0 +1,17 @@
+---
+- name: Prepare
+  hosts: molecule-grafana
+  become: true
+  gather_facts: true
+  vars:
+    gcp_compute_name: "{{ molecule_yml.platforms[0].name }}"
+    gcp_compute_group: "{{ molecule_yml.platforms[0].group }}"
+    gcp_compute_fw_ports: "{{ molecule_yml.platforms[0].fw_ports }}"
+    gcp_compute_fw_source_ranges: "{{ molecule_yml.platforms[0].fw_source_ranges }}"
+    docker_network_name: monitoring
+    docker_plugins:
+      - name: grafana/loki-docker-driver:2.9.2
+        state: enable
+        alias: loki
+  roles:
+    - role: common/docker

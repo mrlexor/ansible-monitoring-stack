@@ -1,0 +1,6 @@
+---
+- name: Converge
+  hosts: molecule-loki
+  become: true
+  roles:
+    - role: loki

@@ -1,5 +1,28 @@
 ---
-- name: get_instance | Check if {{ gcp_compute_name }}-{{ item }}-vm-address exists and get an andress
+- name: get_instance | Check if {{ gcp_compute_name }}-{{ item }}-vm exists
+  google.cloud.gcp_compute_instance_info:
+    filters:
+      - name = {{ gcp_compute_name }}-{{ item }}-vm
+    zone: "{{ gcp_compute_zone }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+  register: _gcp_compute_get_instance
+  tags: gcp_compute
+
+- name: get_instance | Get a reserved IP address
+  google.cloud.gcp_compute_address_info:
+    filters:
+      - name = {{ gcp_compute_reserved_address_name }}
+    region: "{{ gcp_compute_region }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+  register: _gcp_compute_get_reserved_address
+  when: gcp_compute_reserved_address_name != ""
+  tags: gcp_compute
+
+- name: get_instance | Get adddress of {{ gcp_compute_name }}-{{ item }}-vm-address
   google.cloud.gcp_compute_address_info:
     filters:
       - name = {{ gcp_compute_name }}-{{ item }}-vm-address
@@ -8,11 +31,16 @@
     auth_kind: "{{ gcp_compute_auth_kind }}"
     service_account_contents: "{{ gcp_compute_svc_file_content }}"
   register: _gcp_compute_get_address
+  when:
+    - gcp_compute_reserved_address_name == ""
+    - _gcp_compute_get_instance != []
   tags: gcp_compute
 
-- name: Include tasks create_instance.yaml
+- name: get_instance | Include tasks create_instance.yaml
   ansible.builtin.include_tasks: create_instance.yaml
-  when: _gcp_compute_get_address.resources == []
+  when:
+    - not gcp_compute_destroy
+    - _gcp_compute_get_instance.resources == []
   tags: gcp_compute
 
 - name: get_instance | Add {{ gcp_compute_name }}-{{ item }}-vm to {{ gcp_compute_group }}
@@ -20,5 +48,14 @@
     hostname: "{{ _gcp_compute_get_address.resources[0].address }}"
     groupname: "{{ gcp_compute_group }}"
   check_mode: false
-  when: _gcp_compute_get_address.resources != []
+  when:
+    - gcp_compute_reserved_address_name == ""
+    - _gcp_compute_get_address.resources != []
   tags: gcp_compute
+
+- name: get_instance | Include tasks destroy_instance.yaml
+  ansible.builtin.include_tasks: destroy_instance.yaml
+  with_sequence: start=1 end={{ gcp_compute_count }} format=%03x
+  when:
+    - gcp_compute_destroy
+    - _gcp_compute_get_instance.resources != []

@@ -2,6 +2,7 @@
 alertmanager_image: prom/alertmanager
 alertmanager_version: v0.27.0
 alertnamager_network_name: monitoring
+alertmanager_loki_url: "http://{{ hostvars[inventory_hostname].ansible_default_ipv4.address | default(hostvars[ansible_host].ansible_default_ipv4.address) }}:3100/loki/api/v1/push"
 
 alertmanager_user: alertmanager
 alertmanager_group: alertmanager
