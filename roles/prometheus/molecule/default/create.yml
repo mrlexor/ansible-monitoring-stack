@@ -1,0 +1,15 @@
+---
+- name: Create
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  no_log: "{{ not (lookup('env', 'MOLECULE_DEBUG') | bool or molecule_yml.provisioner.log|default(false) | bool) }}"
+  strategy: linear
+  vars:
+    gcp_compute_reserved_address_name: molecule
+    gcp_compute_name: "{{ molecule_yml.platforms[0].name }}"
+    gcp_compute_group: "{{ molecule_yml.platforms[0].group }}"
+    gcp_compute_fw_ports: "{{ molecule_yml.platforms[0].fw_ports }}"
+    gcp_compute_fw_source_ranges: "{{ molecule_yml.platforms[0].fw_source_ranges }}"
+  roles:
+    - role: common/gcp_compute

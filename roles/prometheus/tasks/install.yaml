@@ -30,7 +30,7 @@
       - /var/run/docker.sock:/var/run/docker.sock
     log_driver: loki
     log_options:
-      loki-url: "http://{{ hostvars[ansible_host].ansible_default_ipv4.address }}:3100/loki/api/v1/push"
+      loki-url: "{{ prometheus_loki_url }}"
       loki-retries: "5"
       loki-batch-size: "400"
     networks:

@@ -1,0 +1,11 @@
+---
+all:
+  hosts:
+    molecule-alertmanager:
+      ansible_host: 35.184.205.89
+    molecule-grafana:
+      ansible_host: 35.184.205.89
+    molecule-loki:
+      ansible_host: 35.184.205.89
+    molecule-prometheus:
+      ansible_host: 35.184.205.89

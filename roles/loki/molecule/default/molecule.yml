@@ -1,0 +1,30 @@
+---
+driver:
+  name: gce
+
+platforms:
+  - name: molecule-loki # is an instance name
+    fw_ports:
+      - 3000
+      - 9090
+      - 9093
+    fw_source_ranges:
+      - 81.202.93.0/24
+
+provisioner:
+  name: ansible
+  inventory:
+    links:
+      hosts: ../../../../inventory/all.yaml
+  config_options:
+    defaults:
+      host_key_checking: false
+      allow_world_readable_tmpfiles: true
+      vault_identity_list: "../../../../.vault/devops"
+      remote_user: someadmin
+
+verifier:
+  name: testinfra
+  directory: ../tests
+
+role_name_check: 1

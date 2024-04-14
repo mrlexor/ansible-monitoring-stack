@@ -1,0 +1,336 @@
+---
+- name: Converge
+  hosts: molecule-prometheus
+  become: true
+  vars:
+    prometheus_custom_targets:
+      scrape_configs:
+        - job_name: docker-node-exporter
+          docker_sd_configs:
+            - host: unix:///var/run/docker.sock
+          relabel_configs:
+            - source_labels: [ __meta_docker_container_label_prometheus_node_exporter ]
+              regex: true.*
+              action: keep
+            - target_label: instance
+              replacement: "{{ hostvars[inventory_hostname].ansible_nodename }}"
+            - source_labels: [ __meta_docker_network_ip ]
+              regex: (.+)
+              target_label: __address__
+              replacement: ${1}:9100
+        - job_name: docker-cadvisor
+          docker_sd_configs:
+            - host: unix:///var/run/docker.sock
+          relabel_configs:
+            - source_labels: [ __meta_docker_container_label_prometheus_cadvisor ]
+              regex: true.*
+              action: keep
+            - target_label: instance
+              replacement: "{{ hostvars[inventory_hostname].ansible_nodename }}"
+            - source_labels: [ __meta_docker_network_ip ]
+              regex: (.+)
+              target_label: __address__
+              replacement: ${1}:8080
+    prometheus_custom_rules:
+      groups:
+        - name: node_exporter_alerts
+          rules:
+            - alert: Node down
+              expr: up{job="monitoring-pi"} == 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                title: Node {% raw %}{{ $labels.instance }}{% endraw %} is down
+                description: Failed to scrape {% raw %}{{ $labels.job }}{% endraw %} on {% raw %}{{ $labels.instance }}{% endraw %} for more than 2 minutes. Node seems down.
+
+
+            - alert: HostOutOfMemory
+              expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host out of memory (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Node memory is filling up (< 10% left)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostMemoryUnderMemoryPressure
+              expr: rate(node_vmstat_pgmajfault[1m]) > 1000
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host memory under memory pressure (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: The node is under heavy memory pressure. High rate of major page faults\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualNetworkThroughputIn
+              expr: sum by (instance) (rate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual network throughput in (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Host network interfaces are probably receiving too much data (> 100 MB/s)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualNetworkThroughputOut
+              expr: sum by (instance) (rate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual network throughput out (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Host network interfaces are probably sending too much data (> 100 MB/s)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualDiskReadRate
+              expr: sum by (instance) (rate(node_disk_read_bytes_total[2m])) / 1024 / 1024 > 50
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual disk read rate (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk is probably reading too much data (> 50 MB/s)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualDiskWriteRate
+              expr: sum by (instance) (rate(node_disk_written_bytes_total[2m])) / 1024 / 1024 > 50
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual disk write rate (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk is probably writing too much data (> 50 MB/s)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            # Please add ignored mountpoints in node_exporter parameters like
+            # "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/)".
+            # Same rule using "node_filesystem_free_bytes" will fire when disk fills for non-root users.
+            - alert: HostOutOfDiskSpace
+              expr: (node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 10 and ON (instance, device, mountpoint) node_filesystem_readonly == 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host out of disk space (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk is almost full (< 10% left)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            # Please add ignored mountpoints in node_exporter parameters like
+            # "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|run)($|/)".
+            # Same rule using "node_filesystem_free_bytes" will fire when disk fills for non-root users.
+            - alert: HostDiskWillFillIn24Hours
+              expr: (node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 10 and ON (instance, device, mountpoint) predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs"}[1h], 24 * 3600) < 0 and ON (instance, device, mountpoint) node_filesystem_readonly == 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host disk will fill in 24 hours (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Filesystem is predicted to run out of space within the next 24 hours at current write rate\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostOutOfInodes
+              expr: node_filesystem_files_free{mountpoint ="/rootfs"} / node_filesystem_files{mountpoint="/rootfs"} * 100 < 10 and ON (instance, device, mountpoint) node_filesystem_readonly{mountpoint="/rootfs"} == 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host out of inodes (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk is almost running out of available inodes (< 10% left)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostInodesWillFillIn24Hours
+              expr: node_filesystem_files_free{mountpoint ="/rootfs"} / node_filesystem_files{mountpoint="/rootfs"} * 100 < 10 and predict_linear(node_filesystem_files_free{mountpoint="/rootfs"}[1h], 24 * 3600) < 0 and ON (instance, device, mountpoint) node_filesystem_readonly{mountpoint="/rootfs"} == 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host inodes will fill in 24 hours (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Filesystem is predicted to run out of inodes within the next 24 hours at current write rate\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualDiskReadLatency
+              expr: rate(node_disk_read_time_seconds_total[1m]) / rate(node_disk_reads_completed_total[1m]) > 0.1 and rate(node_disk_reads_completed_total[1m]) > 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual disk read latency (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk latency is growing (read operations > 100ms)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostUnusualDiskWriteLatency
+              expr: rate(node_disk_write_time_seconds_totali{device!~"mmcblk.+"}[1m]) / rate(node_disk_writes_completed_total{device!~"mmcblk.+"}[1m]) > 0.1 and rate(node_disk_writes_completed_total{device!~"mmcblk.+"}[1m]) > 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host unusual disk write latency (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Disk latency is growing (write operations > 100ms)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostHighCpuLoad
+              expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host high CPU load (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: CPU load is > 80%\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostCpuStealNoisyNeighbor
+              expr: avg by(instance) (rate(node_cpu_seconds_total{mode="steal"}[5m])) * 100 > 10
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host CPU steal noisy neighbor (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: CPU steal is > 10%. A noisy neighbor is killing VM performances or a spot instance may be out of credit.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            # 1000 context switches is an arbitrary number.
+            # Alert threshold depends on nature of application.
+            # Please read: https://github.com/samber/awesome-prometheus-alerts/issues/58
+            - alert: HostContextSwitching
+              expr: (rate(node_context_switches_total[5m])) / (count without(cpu, mode) (node_cpu_seconds_total{mode="idle"})) > 1000
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host context switching (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Context switching is growing on node (> 1000 / s)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostSwapIsFillingUp
+              expr: (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) * 100 > 80
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host swap is filling up (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Swap is filling up (>80%)\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostSystemdServiceCrashed
+              expr: node_systemd_unit_state{state="failed"} == 1
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host SystemD service crashed (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: SystemD service crashed\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostPhysicalComponentTooHot
+              expr: node_hwmon_temp_celsius > 75
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host physical component too hot (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Physical hardware component too hot\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostNodeOvertemperatureAlarm
+              expr: node_hwmon_temp_crit_alarm_celsius == 1
+              for: 0m
+              labels:
+                severity: critical
+              annotations:
+                summary: Host node overtemperature alarm (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Physical node temperature alarm triggered\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostRaidArrayGotInactive
+              expr: node_md_state{state="inactive"} > 0
+              for: 0m
+              labels:
+                severity: critical
+              annotations:
+                summary: Host RAID array got inactive (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: RAID array {% raw %}{{ $labels.device }}{% endraw %} is in degraded state due to one or more disks failures. Number of spare drives is insufficient to fix issue automatically.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostRaidDiskFailure
+              expr: node_md_disks{state="failed"} > 0
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host RAID disk failure (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: At least one device in RAID array on {% raw %}{{ $labels.instance }}{% endraw %} failed. Array {% raw %}{{ $labels.md_device }}{% endraw %} needs attention and possibly a disk swap\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostKernelVersionDeviations
+              expr: count(sum(label_replace(node_uname_info, "kernel", "$1", "release", "([0-9]+.[0-9]+.[0-9]+).*")) by (kernel)) > 1
+              for: 6h
+              labels:
+                severity: warning
+              annotations:
+                summary: Host kernel version deviations (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Different kernel versions are running\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostOomKillDetected
+              expr: increase(node_vmstat_oom_kill[1m]) > 0
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host OOM kill detected (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: OOM kill detected\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostEdacCorrectableErrorsDetected
+              expr: increase(node_edac_correctable_errors_total[1m]) > 0
+              for: 0m
+              labels:
+                severity: info
+              annotations:
+                summary: Host EDAC Correctable Errors detected (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Instance has had {% raw %}{{ printf "%.0f" $value }}{% endraw %} correctable memory errors reported by EDAC in the last 5 minutes.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostEdacUncorrectableErrorsDetected
+              expr: node_edac_uncorrectable_errors_total > 0
+              for: 0m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host EDAC Uncorrectable Errors detected (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Instance has had {% raw %}{{ printf "%.0f" $value }}{% endraw %} uncorrectable memory errors reported by EDAC in the last 5 minutes.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostNetworkReceiveErrors
+              expr: rate(node_network_receive_errs_total[2m]) / rate(node_network_receive_packets_total[2m]) > 0.01
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host Network Receive Errors (instance {% raw %}{{ $labels.instance }}{% endraw %}:{% raw %}{{ $labels.device }}{% endraw %})
+                description: Instance interface has encountered {% raw %}{{ printf "%.0f" $value }}{% endraw %} receive errors in the last five minutes.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostNetworkTransmitErrors
+              expr: rate(node_network_transmit_errs_total[2m]) / rate(node_network_transmit_packets_total[2m]) > 0.01
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host Network Transmit Errors (instance {% raw %}{{ $labels.instance }}{% endraw %}:{% raw %}{{ $labels.device }}{% endraw %})
+                description: Instance has encountered {% raw %}{{ printf "%.0f" $value }}{% endraw %} transmit errors in the last five minutes.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostNetworkInterfaceSaturated
+              expr: (rate(node_network_receive_bytes_total{device!~"^tap.*"}[1m]) + rate(node_network_transmit_bytes_total{device!~"^tap.*"}[1m])) / node_network_speed_bytes{device!~"^tap.*"} > 0.8
+              for: 1m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host Network Interface Saturated (instance {% raw %}{{ $labels.instance }}{% endraw %}:{% raw %}{{ $labels.interface }}{% endraw %})
+                description: The network interface is getting overloaded.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostConntrackLimit
+              expr: node_nf_conntrack_entries / node_nf_conntrack_entries_limit > 0.8
+              for: 5m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host conntrack limit (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: The number of conntrack is approching limit\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostClockSkew
+              expr: (node_timex_offset_seconds > 0.05 and deriv(node_timex_offset_seconds[5m]) >= 0) or (node_timex_offset_seconds < -0.05 and deriv(node_timex_offset_seconds[5m]) <= 0)
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host clock skew (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Clock skew detected. Clock is out of sync.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+
+            - alert: HostClockNotSynchronising
+              expr: min_over_time(node_timex_sync_status[1m]) == 0 and node_timex_maxerror_seconds >= 16
+              for: 2m
+              labels:
+                severity: warning
+              annotations:
+                summary: Host clock not synchronising (instance {% raw %}{{ $labels.instance }}{% endraw %})
+                description: Clock not synchronising.\n  VALUE = {% raw %}{{ $value }}{% endraw %}
+  roles:
+    - role: prometheus

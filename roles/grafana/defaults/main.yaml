@@ -2,6 +2,7 @@
 grafana_image: grafana/grafana
 grafana_version: 10.4.2
 grafana_network_name: monitoring
+grafana_loki_url: "http://{{ hostvars[inventory_hostname].ansible_default_ipv4.address | default(hostvars[ansible_host].ansible_default_ipv4.address) }}:3100/loki/api/v1/push"
 
 grafana_user: grafana
 grafana_group: grafana

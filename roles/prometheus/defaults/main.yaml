@@ -2,6 +2,7 @@
 prometheus_image: prom/prometheus
 prometheus_version: v2.51.2
 prometheus_network_name: monitoring
+prometheus_loki_url: "http://{{ hostvars[inventory_hostname].ansible_default_ipv4.address | default(hostvars[ansible_host].ansible_default_ipv4.address) }}:3100/loki/api/v1/push"
 
 prometheus_user: prometheus
 prometheus_group: prometheus
