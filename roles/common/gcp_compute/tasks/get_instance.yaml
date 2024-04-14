@@ -1,0 +1,24 @@
+---
+- name: get_instance | Check if {{ gcp_compute_name }}-{{ item }}-vm-address exists and get an andress
+  google.cloud.gcp_compute_address_info:
+    filters:
+      - name = {{ gcp_compute_name }}-{{ item }}-vm-address
+    region: "{{ gcp_compute_region }}"
+    project: "{{ gcp_compute_project }}"
+    auth_kind: "{{ gcp_compute_auth_kind }}"
+    service_account_contents: "{{ gcp_compute_svc_file_content }}"
+  register: _gcp_compute_get_address
+  tags: gcp_compute
+
+- name: Include tasks create_instance.yaml
+  ansible.builtin.include_tasks: create_instance.yaml
+  when: _gcp_compute_get_address.resources == []
+  tags: gcp_compute
+
+- name: get_instance | Add {{ gcp_compute_name }}-{{ item }}-vm to {{ gcp_compute_group }}
+  ansible.builtin.add_host:
+    hostname: "{{ _gcp_compute_get_address.resources[0].address }}"
+    groupname: "{{ gcp_compute_group }}"
+  check_mode: false
+  when: _gcp_compute_get_address.resources != []
+  tags: gcp_compute

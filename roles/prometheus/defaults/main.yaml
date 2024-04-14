@@ -1,12 +1,17 @@
 ---
+prometheus_image: prom/prometheus
 prometheus_version: v2.51.2
+prometheus_network_name: monitoring
 
 prometheus_user: prometheus
 prometheus_group: prometheus
+prometheus_uid: 900
+prometheus_gid: 900
 prometheus_base_directories:
   - /etc/prometheus
   - /etc/prometheus/rules
   - /etc/prometheus/targets
+  - /var/lib/prometheus
 
 prometheus_additional_command_args: |
   --web.enable-lifecycle

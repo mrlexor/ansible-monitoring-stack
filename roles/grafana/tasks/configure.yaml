@@ -1,0 +1,41 @@
+---
+- name: configure | Create base directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+  loop: "{{ grafana_base_directories }}"
+  tags: grafana
+
+- name: configure | Generate dashboards.yml
+  ansible.builtin.template:
+    src: dashboards.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/dashboards/dashboards.yml"
+    mode: 0640
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+  notify: restart grafana
+  tags: grafana
+
+- name: configure | Generate datasources.yml
+  ansible.builtin.template:
+    src: datasources.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
+    mode: 0640
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+  notify: restart grafana
+  tags: grafana
+
+- name: configure | Copy dashboards
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ grafana_config_dir }}/provisioning/dashboards/"
+    mode: 0640
+    owner: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+  loop: "{{ lookup('fileglob', 'dashboards/*', wantlist=True) }}"
+  notify: restart grafana
+  tags: grafana

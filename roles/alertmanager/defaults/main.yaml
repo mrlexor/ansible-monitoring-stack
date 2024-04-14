@@ -1,0 +1,17 @@
+---
+alertmanager_image: prom/alertmanager
+alertmanager_version: v0.27.0
+alertnamager_network_name: monitoring
+
+alertmanager_user: alertmanager
+alertmanager_group: alertmanager
+alertmanager_uid: 902
+alertmanager_gid: 902
+alertmanager_base_directories:
+  - /etc/alertmanager
+  - /var/lib/alertmanager
+
+alertmanager_additional_command_args: ""
+
+alertmanager_slack_webhook: webhook
+alertmanager_slack_channel: fake

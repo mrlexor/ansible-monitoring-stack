@@ -1,0 +1,13 @@
+---
+dependencies:
+  - role: common/users
+    vars:
+      users_groups:
+        - name: "{{ prometheus_group }}"
+          gid: "{{ prometheus_gid }}"
+      users:
+        - name: "{{ prometheus_user }}"
+          uid: "{{ prometheus_uid }}"
+          groups:
+            - "{{ prometheus_group }}"
+            - docker

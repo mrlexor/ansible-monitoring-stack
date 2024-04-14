@@ -1,0 +1,6 @@
+---
+- name: restart loki
+  community.docker.docker_container:
+    name: loki
+    restart: true
+  when: not ansible_check_mode

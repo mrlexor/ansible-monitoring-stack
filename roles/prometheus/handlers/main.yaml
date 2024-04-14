@@ -3,3 +3,4 @@
   community.docker.docker_container:
     name: prometheus
     restart: true
+  when: not ansible_check_mode

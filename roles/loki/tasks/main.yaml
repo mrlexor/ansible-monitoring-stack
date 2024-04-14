@@ -1,0 +1,11 @@
+---
+- name: Import tasks configure.yaml
+  ansible.builtin.import_tasks: configure.yaml
+  tags: loki
+
+- name: Import tasks install.yaml
+  ansible.builtin.import_tasks: install.yaml
+  tags: loki
+
+- ansible.builtin.meta: flush_handlers
+  tags: loki

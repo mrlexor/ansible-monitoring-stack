@@ -3,4 +3,12 @@
   loop:
     - prepare.yaml
     - install.yaml
-  tags: docker, docker-compose, docker-users
+  tags: docker, docker-compose
+
+- import_tasks: plugins.yaml
+  when: docker_plugins != []
+  tags: docker, docker_plugin
+
+- import_tasks: network.yaml
+  when: docker_network_name != ""
+  tags: docker, docker_nework

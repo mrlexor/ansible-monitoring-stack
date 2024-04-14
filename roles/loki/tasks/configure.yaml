@@ -1,0 +1,30 @@
+---
+- name: configure | Create base directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "directory"
+    mode: "0755"
+    owner: "{{ loki_user }}"
+    group: "{{ loki_group }}"
+  loop: "{{ loki_base_directories }}"
+  tags: loki
+
+- name: configure | Generate config.yml
+  ansible.builtin.template:
+    src: "config.yml.j2"
+    dest: "/etc/loki/config.yml"
+    mode: "0644"
+    owner: "{{ loki_user }}"
+    group: "{{ loki_group }}"
+  notify: restart loki
+  tags: loki
+
+- name: configure | Generate rules.yml
+  ansible.builtin.template:
+    src: "rules.yml.j2"
+    dest: "{{ loki_ruler_alert_path }}"
+    mode: "0644"
+    owner: "{{ loki_user }}"
+    group: "{{ loki_group }}"
+  notify: restart loki
+  tags: loki

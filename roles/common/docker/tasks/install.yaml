@@ -61,25 +61,3 @@
 - include_tasks: docker-compose.yaml
   when: docker_install_compose | bool
   tags: docker
-
-- name: install | Get docker group info using getent.
-  ansible.builtin.getent:
-    database: group
-    key: docker
-    split: ':'
-  when: docker_users | length > 0 and not ansible_check_mode
-  tags: docker
-
-- name: install | Check if there are any users to add to the docker group.
-  ansible.builtin.set_fact:
-    at_least_one_user_to_modify: true
-  when:
-    - not ansible_check_mode
-    - docker_users | length > 0
-    - item not in ansible_facts.getent_group["docker"][2]
-  with_items: "{{ docker_users }}"
-  tags: docker
-
-- include_tasks: docker-users.yaml
-  when: at_least_one_user_to_modify is defined
-  tags: docker

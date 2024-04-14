@@ -4,16 +4,21 @@
     gcp_compute_name: monitoring-stack
     gcp_compute_group: monitoring_stack
     gcp_compute_fw_ports:
+      - 3000
       - 9090
+      - 9093
     gcp_compute_fw_source_ranges:
-      - 81.202.93.170/32
+      - 81.202.93.0/24
   tags: always
 
 - hosts: monitoring_stack
   gather_facts: true
   roles:
-    - role: "common/users"
     - role: "common/packages"
     - role: "common/docker"
+    - role: "alertmanager"
+    - role: "loki"
     - role: "prometheus_exporters/node_exporter"
+    - role: "prometheus_exporters/cadvisor"
     - role: "prometheus"
+    - role: "grafana"

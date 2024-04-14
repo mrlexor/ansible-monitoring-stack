@@ -1,5 +1,5 @@
 ---
-- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-disk
+- name: create_instance | Create {{ gcp_compute_name }}-{{ item }}-vm-disk
   google.cloud.gcp_compute_disk:
     name: "{{ gcp_compute_name }}-{{ item }}-vm-disk"
     size_gb: 50
@@ -15,7 +15,7 @@
   check_mode: false
   tags: gcp_compute
 
-- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-address
+- name: create_instance | Create {{ gcp_compute_name }}-{{ item }}-vm-address
   google.cloud.gcp_compute_address:
     name: "{{ gcp_compute_name }}-{{ item }}-vm-address"
     region: "{{ gcp_compute_region }}"
@@ -29,7 +29,7 @@
   check_mode: false
   tags: gcp_compute
 
-- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm
+- name: create_instance | Create {{ gcp_compute_name }}-{{ item }}-vm
   google.cloud.gcp_compute_instance:
     state: present
     name: "{{ gcp_compute_name }}-{{ item }}-vm"
@@ -55,7 +55,7 @@
   check_mode: false
   tags: gcp_compute
 
-- name: create_instance | Create a {{ gcp_compute_name }}-{{ item }}-vm-fw
+- name: create_instance | Create {{ gcp_compute_name }}-{{ item }}-vm-fw
   google.cloud.gcp_compute_firewall:
     name: "{{ gcp_compute_name }}-{{ item }}-vm-fw"
     allowed:

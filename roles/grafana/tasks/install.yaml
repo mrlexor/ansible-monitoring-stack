@@ -1,0 +1,24 @@
+---
+- name: install | Create grafana as a docker container
+  community.docker.docker_container:
+    state: started
+    image: "{{ grafana_image }}:{{ grafana_version }}"
+    name: grafana
+    user: "{{ grafana_uid }}:{{ grafana_gid }}"
+    published_ports:
+      - 3000:3000
+    recreate: false
+    restart_policy: always
+    volumes:
+      - "{{ grafana_config_dir }}/provisioning/dashboards:{{ grafana_config_dir }}/provisioning/dashboards"
+      - "{{ grafana_config_dir }}/provisioning/datasources:{{ grafana_config_dir }}/provisioning/datasources"
+      - "{{ grafana_data_dir }}:{{ grafana_data_dir }}"
+    log_driver: loki
+    log_options:
+      loki-url: "http://{{ hostvars[ansible_host].ansible_default_ipv4.address }}:3100/loki/api/v1/push"
+      loki-retries: "5"
+      loki-batch-size: "400"
+    networks:
+      - name: "{{ grafana_network_name }}"
+  become_user: "{{ grafana_user }}"
+  tags: grafana
