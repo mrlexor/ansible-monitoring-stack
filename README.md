@@ -1,5 +1,7 @@
 # Monitoring stack
 
+# Google service account key has been abandoned and ssh key has been deleted
+
 ### Preparation
 
 1. Setup `venv`:
