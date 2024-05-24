@@ -1,6 +1,6 @@
 # Monitoring stack
 
-# Google service account key has been abandoned
+# Google service account key has been abandoned and ssh key has been deleted
 
 ### Preparation
 
